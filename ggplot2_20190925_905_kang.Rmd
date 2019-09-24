@@ -508,7 +508,7 @@ C. `total` and `population`.
 
 D. `murders` and `size`.
 
-> B. `total_murders` and `population_size`.
+> C. `total` and `population`.
 
 6. To create the scatter plot we add a layer with `geom_point`. The aesthetic mappings require us to define the x-axis and y-axis variables respectively. So the code looks like this:
 
