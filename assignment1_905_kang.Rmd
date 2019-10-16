@@ -1,0 +1,134 @@
+---
+output:
+  html_notebook:
+    css: custom.css
+---
+
+## Prenatal stage 에 따른 Dorsolateral prefrontal cortex 에서의 protein coding gene expression 분석
+
+Human brain development는 시간적, 공간적으로 차등적인 gene expression의 조절에 의해 이루어집니다. 다른 포유동물들과 유사하지만 좀 더 복잡하며, human brain에서만 나타나는 부분들도 있기에 in vivo 연구에서의 한계가 있습니다. 윤리적인 문제로 실제 인간의 뇌를 발달시키면서 연구를 할 수는 없기 때문에, 한계 극복을 위한 다양한 연구들( 줄기세포 등 )이 진행되고 있습니다.
+
+이번에 분석할 Brainspan dataset의 sample structure는 **dorsolateral prefrontal cortex (DFC)**입니다. Cortex는 중추신경계의 통합이 이루어지는 부분이므로 ( [Cerebral Cortex](https://en.wikipedia.org/wiki/Cerebral_cortex) ), 많은 연구가 진행되고 있습니다. 그 중 하나인 DFC는 집행 기능( [executive function](https://en.wikipedia.org/wiki/Executive_functions) )을 하고 있는 부분으로, 기억이나 인지, 집중력 등을 조절하는 역할을 하고 있습니다.
+
+> The dorsolateral prefrontal cortex (DLPFC or DL-PFC) is an area in the prefrontal cortex of the brain of humans and non-human primates. It undergoes a prolonged period of maturation which lasts until adulthood.  
+> An important function of the DLPFC is the **executive functions**, such as working memory, cognitive flexibility, planning, inhibition, and abstract reasoning. However, the DLPFC is not exclusively responsible for the executive functions.  
+> All complex mental activity **requires the additional cortical and subcortical circuits** with which the DLPFC is connected. The DLPFC is also the highest cortical area that is involved in motor planning, organization and regulation.  
+( [Dorsolateral prefrontal cortex](https://en.wikipedia.org/wiki/Dorsolateral_prefrontal_cortex) )
+
+앞서 언급했듯 human brain development는 차등적인 gene expression에 의해 이루어집니다. 이 때, 어떤 한 가지 유전자가 critical하게 작용할 수도 있고, 여러 유전자들이 동시에 발현되어야 development가 이루어질 수도 있다고 생각합니다. 또한, 중추신경계 통합이 이루어지는 cortex인 만큼 development가 가장 많이 이루어지는 prenatal 시기는 mutation으로 인해 central neuron system disorder가 발생할 수도 있는 중요한 시기라고 생각했습니다.
+
+따라서 prenatal stage를 중심으로 protein coding gene expression data를 시각화하여 gene들이 정말 stage에 따라 차등적으로 발현되는지, critical한 한 가지 유전자가 존재하는지에 대해 알아보려 합니다.
+
+```{r}
+library(tidyverse)
+library(dplyr)
+library(dslabs)
+library(ggplot2)
+library(RColorBrewer)
+
+# wget https://www.dropbox.com/s/u3ii9x4wpnzazm5/data_brainspan_DFC.20190928.Rdata
+load('data_brainspan_DFC.20190928.Rdata')
+```
+
+Gene이 발현하여 기능을 하기 위해서는 protein을 coding하고 있어야 합니다. 물론 그렇지 않아도 기능을 하는 유전자들이 있지만, development에 관여하는 것이므로 protein coding gene만을 선별하려 합니다. 또한, development에 영향을 많이 미치는 gene일수록 expression rate이 높을 것이라고 생각했습니다.  
+이를 위해 `filter`로 protein coding gene을 선별하고, `mutate`를 이용하여 sample들을 stage별로 그룹지어 평균을 낸 다음, `gather`를 이용하여 wide format을 long format으로 만들었습니다.
+Sample들은 정상적인 조직만이 이용되었다고 하였으므로( [PDF][PDF] ), 같은 유전자라면 비슷한 수준의 expression rate을 가졌을 것이라 생각하고 평균을 냈습니다.  
+Human brain developmental stage는 논문마다 조금씩 다른데, [PDF link][PDF]의 구분을 따랐습니다.
+
+목적하는 gene을 좀 더 편하게 선별하기 위해 `e` data와 `g` data를 합친 후, 앞서 설명했던 과정대로 data를 정리했습니다.
+
+```{r}
+a <- cbind(e,g)
+
+prenatal_stage <- a %>%
+  filter(gene_type == "protein_coding") %>%
+  rowwise() %>%
+  mutate(stage_2A = median(!!quo(c(X1, X2))),
+         stage_2B = median(!!quo(c(X3, X4, X5))),
+         stage_3A = median(!!quo(c(X6, X7, X8))),
+         stage_3B = median(!!quo(c(X9, X10, X11, X12))),
+         stage_4 = median(!!quo(c(X13, X14))),
+         stage_5 = median(!!quo(c(X15, X16, X17)))) %>%
+  select(stage_2A, stage_2B, stage_3A, stage_3B, stage_4, stage_5, gene_symbol, gene_type) %>%
+  gather(key = 'stage', value = 'rate', stage_2A:stage_5)
+```
+
+( [GERT STULP](https://www.gertstulp.com/post/different-ways-of-calculating-rowmeans-on-selected-variables-in-a-tidyverse-framework/), [Cookbook for R](http://www.cookbook-r.com/Manipulating_data/Converting_data_between_wide_and_long_format/) )
+
+그 결과, 113,640개의 row를 가진 data를 만들게 되었습니다. Stage는 총 6개이고 long format이므로, 이 값을 6으로 나누면 총 18,940개의 protein coding gene을 선별한 셈입니다. 이는 시각화를 하기에는 너무 많기 때문에 일정 expression rate 이상을 선별하고자 합니다.
+
+대략 20개 정도의 유전자가 적당하다고 생각하였으므로, 여러번의 실험을 통하여 rate이 700 이상인 row들을 선별하였습니다.
+
+```{r}
+prenatal_stage <- a %>%
+  filter(gene_type == "protein_coding") %>%
+  rowwise() %>%
+  mutate(stage_2A = median(!!quo(c(X1, X2))),
+         stage_2B = median(!!quo(c(X3, X4, X5))),
+         stage_3A = median(!!quo(c(X6, X7, X8))),
+         stage_3B = median(!!quo(c(X9, X10, X11, X12))),
+         stage_4 = median(!!quo(c(X13, X14))),
+         stage_5 = median(!!quo(c(X15, X16, X17)))) %>%
+  select(stage_2A, stage_2B, stage_3A, stage_3B, stage_4, stage_5, gene_symbol, gene_type) %>%
+  filter(stage_2A > 700 | stage_2B > 700 | stage_3A > 700 | stage_3B > 700 | stage_4 > 700 | stage_5 > 700) %>%
+  gather(key = 'stage', value = 'rate', stage_2A:stage_5)
+```
+
+총 19개의 gene이 선별되었고, `prenatal_stage` data로 `geom_tile`을 그려 expression rate을 한번에 볼 수 있도록 했습니다.
+
+```{r}
+p <- prenatal_stage %>%
+  ggplot(aes(stage, gene_symbol, fill = rate)) +
+  geom_tile() +
+  scale_fill_gradientn(colors = brewer.pal(9, "YlOrBr")) +
+  theme_minimal() +
+  theme(plot.title = element_text(hjust = 0.5),
+        axis.text = element_text(color = "black")) +
+  ggtitle("DFC protein coding gene expression at prenatal stages") +
+  xlab("") +
+  ylab("")
+p
+```
+
+위 plot을 통해 알 수 있는 정보들은 다음과 같습니다.
+
+1. Prenatal 시기에서 ACTG1과 TMSB10, TUBA1A가 가장 많이 발현된다.
+
+2. rate에 크게 차이가 없어보이는 gene(RPL27)이 있긴 하지만, 대부분의 gene들이 차등적으로 발현된다.
+
+3. `stage_5`에서 전체적으로 expression rate이 낮아지는 패턴이 보인다. `stage_5`는 태어나기 바로 전 stage이므로, development가 거의 다 되었기 때문에 많이 expression되지 않는 것으로 생각해볼 수 있다.
+
+결과적으로 expression rate이 700 이상일 경우, DFC development에 critical한 gene은 한 가지가 아니며, 여러 gene들의 stage에 따른 차등적인 발현으로 이루어진다는 것을 알 수 있었습니다.
+
+가장 많이 발현되는 gene 세 가지에 대해 간략하게 조사해보았습니다.
+
+* ACTG1은 *Homo sapiens actin gamma 1*으로, 모든 세포에서 발견할 수 있는 cytoplasmic actin을 coding합니다. 유전자의 mutation은 autosomal dominant non-syndromic progressive hearing loss와 연관되어 있습니다.  
+* TMSB10은 *Homo sapiens thymosin beta 10*으로, breast cancer와 lung cancer에 연관성이 있습니다. Human brain development 시 신경모세포종에서 레티노익산의 조절을 받습니다.  
+* TUBA1A는 *Homo sapiens tubulin alpha 1a*로, microtubule을 coding합니다. 유전자의 mutation은 defective neuronal migration으로 인해 발생하는 lissencephaly( 뇌회결손 )의 원인이 됩니다.
+
+( [NCBI](https://www.ncbi.nlm.nih.gov) )
+
+아래 코드는 `.pdf` 파일로 저장할 때를 고려해서 만들었습니다.
+
+```{r}
+p1 <- prenatal_stage %>%
+  ggplot(aes(stage, gene_symbol, fill = rate)) +
+  geom_tile() +
+  scale_fill_gradientn(colors = brewer.pal(9, "YlOrBr")) +
+  theme_minimal() +
+  theme(axis.text = element_text(color = "black", size = 14),
+        axis.ticks = element_blank(),
+        legend.title = element_text(size = 13, color = "grey40"),
+        legend.text = element_text(size = 11, color = "grey40"),
+        legend.key.size = unit(1, 'cm'),
+        plot.title = element_text(size = 21, hjust = 0.5),
+        ) +
+  ggtitle("DFC protein coding gene expression at Prenatal stages") +
+  xlab("") +
+  ylab("")
+
+# save file
+ggsave('plot.Brainspan_coding_gene_prenatal_stages.20191017.kang.pdf', p1, width = 10, height = 6)
+```
+
+[PDF]:https://help.brain-map.org/download/attachments/3506181/Transcriptome_Profiling.pdf?version=1&modificationDate=1382036562736&api=v2
