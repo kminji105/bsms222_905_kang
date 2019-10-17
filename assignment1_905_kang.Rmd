@@ -6,6 +6,8 @@ output:
 
 ## Prenatal stage 에 따른 Dorsolateral prefrontal cortex 에서의 protein coding gene expression 분석
 
+#### Introduction
+
 Human brain development는 시간적, 공간적으로 차등적인 gene expression의 조절에 의해 이루어집니다. 다른 포유동물들과 유사하지만 좀 더 복잡하며, human brain에서만 나타나는 부분들도 있기에 in vivo 연구에서의 한계가 있습니다. 윤리적인 문제로 실제 인간의 뇌를 발달시키면서 연구를 할 수는 없기 때문에, 한계 극복을 위한 다양한 연구들( 줄기세포 등 )이 진행되고 있습니다.
 
 이번에 분석할 Brainspan dataset의 sample structure는 **dorsolateral prefrontal cortex (DFC)**입니다. Cortex는 중추신경계의 통합이 이루어지는 부분이므로 ( [Cerebral Cortex](https://en.wikipedia.org/wiki/Cerebral_cortex) ), 많은 연구가 진행되고 있습니다. 그 중 하나인 DFC는 집행 기능( [executive function](https://en.wikipedia.org/wiki/Executive_functions) )을 하고 있는 부분으로, 기억이나 인지, 집중력 등을 조절하는 역할을 하고 있습니다.
@@ -18,6 +20,8 @@ Human brain development는 시간적, 공간적으로 차등적인 gene expressi
 앞서 언급했듯 human brain development는 차등적인 gene expression에 의해 이루어집니다. 이 때, 어떤 한 가지 유전자가 critical하게 작용할 수도 있고, 여러 유전자들이 동시에 발현되어야 development가 이루어질 수도 있다고 생각합니다. 또한, 중추신경계 통합이 이루어지는 cortex인 만큼 development가 가장 많이 이루어지는 prenatal 시기는 mutation으로 인해 central neuron system disorder가 발생할 수도 있는 중요한 시기라고 생각했습니다.
 
 따라서 prenatal stage를 중심으로 protein coding gene expression data를 시각화하여 gene들이 정말 stage에 따라 차등적으로 발현되는지, critical한 한 가지 유전자가 존재하는지에 대해 알아보려 합니다.
+
+#### Manipulating data & Visualization
 
 ```{r}
 library(tidyverse)
@@ -90,23 +94,30 @@ p <- prenatal_stage %>%
 p
 ```
 
+#### Results
+
 위 plot을 통해 알 수 있는 정보들은 다음과 같습니다.
 
 1. Prenatal 시기에서 ACTG1과 TMSB10, TUBA1A가 가장 많이 발현된다.
 
 2. rate에 크게 차이가 없어보이는 gene(RPL27)이 있긴 하지만, 대부분의 gene들이 차등적으로 발현된다.
 
-3. `stage_5`에서 전체적으로 expression rate이 낮아지는 패턴이 보인다. `stage_5`는 태어나기 바로 전 stage이므로, development가 거의 다 되었기 때문에 많이 expression되지 않는 것으로 생각해볼 수 있다.
+3. `stage_4`에서 대략 절반정도 되는 gene들의 expression rate이 가장 높다. 따라서 이 시기에 development가 가장 활발하게 일어난다고 생각해볼 수 있다.
+
+4. `stage_5`에서 전체적으로 expression rate이 낮아지는 패턴이 보인다. `stage_5`는 태어나기 바로 전 stage이므로, development가 거의 다 되었기 때문에 많이 expression되지 않는 것으로 생각해볼 수 있다.
 
 결과적으로 expression rate이 700 이상일 경우, DFC development에 critical한 gene은 한 가지가 아니며, 여러 gene들의 stage에 따른 차등적인 발현으로 이루어진다는 것을 알 수 있었습니다.
 
-가장 많이 발현되는 gene 세 가지에 대해 간략하게 조사해보았습니다.
+가장 많이 expression되는 세 가지 gene에 대해 간략하게 조사해보았습니다.
 
 * ACTG1은 *Homo sapiens actin gamma 1*으로, 모든 세포에서 발견할 수 있는 cytoplasmic actin을 coding합니다. 유전자의 mutation은 autosomal dominant non-syndromic progressive hearing loss와 연관되어 있습니다.  
-* TMSB10은 *Homo sapiens thymosin beta 10*으로, breast cancer와 lung cancer에 연관성이 있습니다. Human brain development 시 신경모세포종에서 레티노익산의 조절을 받습니다.  
+* TMSB10은 *Homo sapiens thymosin beta 10*으로, mutation 시 breast cancer와 lung cancer에 연관성이 있습니다. Human brain development 시 신경모세포종에서 레티노익산의 조절을 받습니다.  
 * TUBA1A는 *Homo sapiens tubulin alpha 1a*로, microtubule을 coding합니다. 유전자의 mutation은 defective neuronal migration으로 인해 발생하는 lissencephaly( 뇌회결손 )의 원인이 됩니다.
 
 ( [NCBI](https://www.ncbi.nlm.nih.gov) )
+
+Mutation 시 청각손실을 일으키는 ACTG1은 `stage_2A`에서 가장 많이 expression됩니다. 이는 DFC 내 청각과 관련된 부분이 다른 부분들보다 일찍 발달한다는 의미가 아닐까 생각합니다.  
+TMSB10과 TUBA1A는 `stage_4`에서 가장 많이 expression되는데, 이 둘은 brain development와 직접적인 연관성이 있다고 연구된 gene들입니다. 특히 TUBA1A는 mutation이 일어났을 시 뇌에 주름이 생기지 않는 lissencephaly의 원인이 되는 gene입니다. 따라서 `stage_4`는 앞에서 언급했던 것처럼 development가 가장 활발하게 일어나는 중요한 시기라고 생각됩니다.
 
 아래 코드는 `.pdf` 파일로 저장할 때를 고려해서 만들었습니다.
 
