@@ -1,0 +1,81 @@
+---
+output:
+  pdf_document: default
+  html_notebook: default
+---
+
+```{r}
+library(dslabs)
+library(tidyverse)
+library(ggplot2)
+```
+
+**Q1.**
+```{r}
+data("heights")
+heights %>%
+  group_by(sex) %>%
+  ggplot(aes(sex, height)) +
+  geom_boxplot(aes(fill = sex)) +
+  geom_point()
+```
+
+```{r}
+female_heights <- heights %>%
+  filter(sex == "Female") %>%
+  pull(height)
+m <- mean(female_heights)
+m
+s <- sd(female_heights)
+s
+pnorm(61, m, s)
+```
+
+Female의 평균적인 키는 Male의 평균적인 키보다 4인치 정도 작다.  
+무작위로 추출했을 때, 61인치를 포함해서 이보다 작은 키를 가진 female이 추출될 가능성은 약 15% 정도 된다.
+
+
+**Q2.**
+```{r}
+set.seed(1)
+N <- 1000
+winning <- sample(c(15, -1), size = N, replace = TRUE, prob = c(3/38, 35/38))
+winning_sum <- sum(sample(c(15, -1), size = N, replace = TRUE, prob = c(3/38, 35/38)))
+winning_sum
+
+as.data.frame(winning) %>%
+  mutate(n = seq(1, N)) %>%
+  ggplot(aes(n, winning)) +
+  geom_point()
+```
+
+```{r}
+B <- 1000
+winnings <- replicate(B, {
+  winning <- sample(c(15, -1), size = N, replace = TRUE, prob = c(3/38, 35/38))
+  sum(winning)
+})
+mean(winnings)
+```
+
+Green beads에 1000번 배팅한 총합은 296 dollars이고,   
+Green beads에 1000번 배팅 한 것을 1000번 반복하면 평균적으로 약 256 dollars 정도를 벌 수 있다.
+
+plot을 그리면 15 보다는 -1이 더 많이 나오는 것을 알 수 있다.
+
+**Q3.**
+```{r}
+p <- 0.45
+N <- 10
+B <- 100
+poll <- replicate(B, {
+    x <- sample(c(0,1), size = N, replace = TRUE, prob = c(1-p, p))
+    mean(x)
+})
+poll %>% as.data.frame() %>%
+  ggplot(aes())
+```
+
+plot을 못그리겠습니다...
+
+
