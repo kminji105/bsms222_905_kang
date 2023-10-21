@@ -109,7 +109,7 @@ base::nchar('District of Columbia')
 ```
 Write a line of code that assigns to the object `new_names` the state abbreviation when the state name is longer than 8 characters.
 ```{r}
-ifelse(base::nchar(murders$state) > 8, 'new_names', murders$abb)
+new_names <- ifelse(base::nchar(murders$state) > 8, murders$abb, murders$state)
 ```
 
 4.Create a function `sum_n` that for any given value, say $n$, computes the sum of the integers from 1 to n (inclusive). Use the function to determine the sum of integers from 1 to 5,000.
